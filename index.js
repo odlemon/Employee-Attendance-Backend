@@ -17,7 +17,7 @@ const app = express();
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://www.ihractive.com', 
+  'https://employee-front-theta.vercel.app', 
 ];
 
 app.use(
