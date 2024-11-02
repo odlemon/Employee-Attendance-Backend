@@ -19,28 +19,46 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, password, location } = req.body; 
 
   
-  const allowedCoordinates = [
-    { latitude: -17.837134, longitude: 31.011569 }, // BTTC
-   
-  ];
+  const centerLatitude = -17.7963008; // Center latitude
+  const centerLongitude = 31.0575104; // Center longitude
+  const radiusInMeters = 1000; // 1 km radius
 
-  // const allowedCoordinates = [
-  //   { latitude: -17.829222, longitude: 31.052462 }, 
-  // ];
- 
-  const { latitude, longitude } = location;
+  // Destructure latitude and longitude from location
+  const { latitude, longitude } = location || {};
 
   // Log the received location
   console.log("Received Location: ", { latitude, longitude });
 
-  const isAllowedLocation = allowedCoordinates.some(coord => {
-    return (
-      Math.abs(coord.latitude - latitude) < 0.01 &&
-      Math.abs(coord.longitude - longitude) < 0.01 
-    );
-  });
+  // Check if the location is defined
+  if (!latitude || !longitude) {
+    return res.status(400).json({
+      status: false,
+      message: "Location not provided.",
+    });
+  }
 
-  if (!isAllowedLocation) {
+  // Function to calculate distance using haversine formula
+  const haversineDistance = (lat1, lon1, lat2, lon2) => {
+    const toRadians = (degrees) => degrees * (Math.PI / 180);
+
+    const R = 6371000; // Radius of the Earth in meters
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+  };
+
+  // Calculate the distance from the center
+  const distance = haversineDistance(centerLatitude, centerLongitude, latitude, longitude);
+
+  // Check if the distance is within the allowed radius
+  if (distance > radiusInMeters) {
     return res.status(403).json({
       status: false,
       message: "Login restricted to specific locations only.",
