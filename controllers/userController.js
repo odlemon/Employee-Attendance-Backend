@@ -3,6 +3,7 @@ import User from "../models/userModel.js";
 import createJWT from "../utils/index.js";
 import Notice from "../models/notis.js";
 import crypto from 'crypto';
+import axios from "axios";
 
 function generateRandomPassword(length = 10) {
   return crypto.randomBytes(Math.ceil(length / 2))
@@ -10,53 +11,67 @@ function generateRandomPassword(length = 10) {
     .slice(0, length);
 }
 
+
+
+
+
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, location } = req.body; 
 
-  // Find the user by email
+  
+  const allowedCoordinates = [
+    { latitude: -17.837134, longitude: 31.011569 }, // BTTC
+   
+  ];
+
+  // const allowedCoordinates = [
+  //   { latitude: -17.829222, longitude: 31.052462 }, 
+  // ];
+ 
+  const { latitude, longitude } = location;
+
+  // Log the received location
+  console.log("Received Location: ", { latitude, longitude });
+
+  const isAllowedLocation = allowedCoordinates.some(coord => {
+    return (
+      Math.abs(coord.latitude - latitude) < 0.01 &&
+      Math.abs(coord.longitude - longitude) < 0.01 
+    );
+  });
+
+  if (!isAllowedLocation) {
+    return res.status(403).json({
+      status: false,
+      message: "Login restricted to specific locations only.",
+    });
+  }
+
+  // Step 3: Continue with login if location is permitted
   const user = await User.findOne({ email });
-
-  // Check if the user exists
   if (!user) {
-    return res.status(401).json({
-      status: false,
-      message: "Invalid email or password.",
-    });
+    return res.status(401).json({ status: false, message: "Invalid email or password." });
   }
 
-  // Check if the user's account is active
   if (!user.isActive) {
-    return res.status(401).json({
-      status: false,
-      message: "User account has been deactivated, contact the administrator",
-    });
+    return res.status(401).json({ status: false, message: "User account has been deactivated. Contact administrator." });
   }
 
-  // Verify the password
   const isMatch = await user.matchPassword(password);
   if (!isMatch) {
-    return res.status(401).json({
-      status: false,
-      message: "Invalid email or password.",
-    });
+    return res.status(401).json({ status: false, message: "Invalid email or password." });
   }
 
-  // Record the login time
   await user.logLogin();
 
-  // Generate JWT token
   const token = createJWT(res, user._id);
-
-  // Prepare user response without password
-  const responseUser = {
-    ...user.toObject(),
-    token,
-  };
+  const responseUser = { ...user.toObject(), token };
   delete responseUser.password;
 
-  // Send the response
   res.status(200).json(responseUser);
 });
+
+
 
 
 
