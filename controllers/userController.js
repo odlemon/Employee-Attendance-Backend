@@ -65,12 +65,6 @@ const loginUser = asyncHandler(async (req, res) => {
     });
   }
 
-  if (dispatchEvent){
-    for (Int8Array?...{
-      chain this op
-    })
-  }
-
   // Step 3: Continue with login if location is permitted
   const user = await User.findOne({ email });
   if (!user) {
