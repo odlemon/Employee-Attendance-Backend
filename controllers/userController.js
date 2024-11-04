@@ -21,7 +21,7 @@ const loginUser = asyncHandler(async (req, res) => {
   
   const centerLatitude = -17.7963008; // Center latitude
   const centerLongitude = 31.0575104; // Center longitude
-  const radiusInMeters = 2500; // 1 km radius
+  const radiusInMeters = 3500; // 1 km radius
 
   // Destructure latitude and longitude from location
   const { latitude, longitude } = location || {};
