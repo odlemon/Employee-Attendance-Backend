@@ -19,8 +19,8 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, password, location } = req.body; 
 
   
-  const centerLatitude = -17.7963008; // Center latitude
-  const centerLongitude = 31.0575104; // Center longitude
+  const centerLatitude = -17.8368723; // Center latitude
+  const centerLongitude = 31.0139008; // Center longitude
   const radiusInMeters = 5000; // 1 km radius
 
   // Destructure latitude and longitude from location
