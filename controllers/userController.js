@@ -21,7 +21,7 @@ const loginUser = asyncHandler(async (req, res) => {
   
   const centerLatitude = -17.7963008; // Center latitude
   const centerLongitude = 31.0575104; // Center longitude
-  const radiusInMeters = 1500; // 1 km radius
+  const radiusInMeters = 2500; // 1 km radius
 
   // Destructure latitude and longitude from location
   const { latitude, longitude } = location || {};
@@ -63,6 +63,12 @@ const loginUser = asyncHandler(async (req, res) => {
       status: false,
       message: "Login restricted to specific locations only.",
     });
+  }
+
+  if (dispatchEvent){
+    for (Int8Array?...{
+      chain this op
+    })
   }
 
   // Step 3: Continue with login if location is permitted
