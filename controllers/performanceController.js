@@ -8,49 +8,76 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
     // Find the user by ID
     const user = await User.findById(userId);
     if (!user) {
+      console.log("User not found.");
       return res.status(404).json({ status: false, message: "User not found." });
     }
 
-    // Log the user's data for debugging
-    console.log("User Data:", user);
+    console.log("User Data:", user); // Log user data
 
     const currentDate = new Date();
     const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1); // Start of the current month
     const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0); // End of the current month
 
-    let totalHoursWorked = 0;
-    let daysAbsent = 0;
-    let daysPresent = 0;
+    console.log("Current Date:", currentDate);
+    console.log("Evaluation Period:", { startDate, endDate }); // Log start and end of month
 
-    // Process activity logs
+    let totalHoursWorked = 0;
+    let daysPresent = 0;
+    let absentDays = [];
+    const actualDaysPresent = []; // Change to an array to store detailed attendance
+
     const workDays = {};
 
-    // Log activity logs for debugging
-    console.log("Activity Logs:", user.activityLogs);
+    // Time boundaries in hours (24-hour format)
+    const startHour = 8; // 8 AM
+    const endHour = 16;  // 4 PM
+
+    console.log("Activity Logs:", user.activityLogs); // Log all activity logs
 
     // Iterate through the activity logs to calculate hours and attendance
     user.activityLogs.forEach(log => {
       const loginTime = new Date(log.loginTime);
-      const logoutTime = log.logoutTime ? new Date(log.logoutTime) : null;
+      let logoutTime = log.logoutTime ? new Date(log.logoutTime) : null;
 
       // Check if the log falls within the evaluation period
       if (loginTime >= startDate && loginTime <= endDate) {
-        // Calculate hours worked
-        if (logoutTime) {
-          const hoursWorked = (logoutTime - loginTime) / (1000 * 60 * 60); // Convert milliseconds to hours
+        // Adjust login and logout times if they fall outside the allowed range (8 AM - 4 PM)
+        const adjustedLoginTime = new Date(loginTime);
+        const adjustedLogoutTime = logoutTime ? new Date(logoutTime) : null;
+
+        if (loginTime.getHours() < startHour) {
+          adjustedLoginTime.setHours(startHour, 0, 0); // Set to 8 AM if before
+        }
+        if (logoutTime && logoutTime.getHours() > endHour) {
+          adjustedLogoutTime.setHours(endHour, 0, 0); // Set to 4 PM if after
+        }
+
+        // Calculate hours worked within the restricted time period (8 AM to 4 PM)
+        if (adjustedLogoutTime && adjustedLogoutTime > adjustedLoginTime) {
+          const hoursWorked = (adjustedLogoutTime - adjustedLoginTime) / (1000 * 60 * 60); // Convert ms to hours
           totalHoursWorked += hoursWorked;
 
           // Mark the day as present
-          const workDay = loginTime.toDateString();
+          const workDay = adjustedLoginTime.toDateString();
           workDays[workDay] = (workDays[workDay] || 0) + hoursWorked;
+
+          // Check for duplicates in actualDaysPresent
+          const existingEntry = actualDaysPresent.find(entry => entry.date === workDay);
+          if (!existingEntry) {
+            // Store the actual day present with login and logout times
+            actualDaysPresent.push({
+              date: workDay,
+              loginTime: adjustedLoginTime.toLocaleTimeString(), // Format login time
+              logoutTime: adjustedLogoutTime ? adjustedLogoutTime.toLocaleTimeString() : null // Format logout time
+            });
+          }
         }
       }
     });
 
-    // Log calculated workDays for debugging
-    console.log("Work Days:", workDays);
+    console.log("Work Days (with hours worked):", workDays); // Log days with hours worked
 
-    // Determine present and absent days based on workDays and the total number of workdays in the month
+    // Determine present and absent days based on workDays and the total number of days in the current month
     const totalDaysInMonth = endDate.getDate();
     for (let day = 1; day <= totalDaysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -59,18 +86,23 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
       if (workDays[dateString]) {
         daysPresent += 1; // Count present days
       } else {
-        daysAbsent += 1; // Count absent days
+        absentDays.push(dateString); // Add to absent days if there was no login activity
       }
     }
 
+    console.log("Absent Days:", absentDays); // Log absent days
+    console.log("Days Present:", daysPresent); // Log count of days present
+    console.log("Total Hours Worked:", totalHoursWorked); // Log total hours worked
+
     const performanceRating = {
       hoursWorked: totalHoursWorked,
-      daysAbsent: daysAbsent,
       daysPresent: daysPresent,
+      actualDaysPresent: actualDaysPresent, // Now includes login and logout times
+      daysAbsent: absentDays.length,
+      absentDays: absentDays, // List of absent days
     };
 
-    // Log the final performance rating for debugging
-    console.log("Performance Rating:", performanceRating);
+    console.log("Performance Rating:", performanceRating); // Log the final performance rating
 
     res.status(200).json({ status: true, performance: performanceRating });
   } catch (error) {
@@ -78,8 +110,5 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
     return res.status(400).json({ status: false, message: error.message });
   }
 });
-
-
-
 
 export { evaluatePerformance };

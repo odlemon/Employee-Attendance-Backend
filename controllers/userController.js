@@ -21,7 +21,7 @@ const loginUser = asyncHandler(async (req, res) => {
   
   const centerLatitude = -17.8368723; // Center latitude
   const centerLongitude = 31.0139008; // Center longitude
-  const radiusInMeters = 5000; // 1 km radius
+  const radiusInMeters = 100; // 1 km radius
 
   // Destructure latitude and longitude from location
   const { latitude, longitude } = location || {};
@@ -94,7 +94,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, isAdmin, title } = req.body;
+  const { name, email, isAdmin, title, department, gender } = req.body;
 
   try {
 
@@ -114,6 +114,8 @@ const registerUser = asyncHandler(async (req, res) => {
       password,
       isAdmin,
       title,
+      department,
+      gender,
     });
 
     if (user) {
@@ -143,12 +145,45 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
 const logoutUser = asyncHandler(async (req, res) => {
-  // Log the request body to the terminal
-  console.log(req.body);
+  const { id: userId, location } = req.body;
+  const { latitude, longitude } = location || {};
 
+  // Location and time constraints
+  const centerLatitude = -17.8368723;
+  const centerLongitude = 31.0139008;
+  const radiusInMeters = 100;
+  const cutoffHour = 16; // 4 PM in 24-hour format
 
+  // Utility function for Haversine distance calculation
+  const haversineDistance = (lat1, lon1, lat2, lon2) => {
+    const toRadians = (degrees) => degrees * (Math.PI / 180);
+    const R = 6371000; // Radius of the Earth in meters
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+              Math.sin(dLon / 2) ** 2;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+  };
 
-  const userId = req.body.id;
+  // Check if location is provided
+  if (!latitude || !longitude) {
+    return res.status(400).json({ message: "Location not provided." });
+  }
+
+  // Calculate the distance from the center
+  const distance = haversineDistance(centerLatitude, centerLongitude, latitude, longitude);
+
+  // Restrict if user is outside the allowed radius
+  if (distance > radiusInMeters) {
+    return res.status(403).json({ message: "Logout restricted to specific locations only." });
+  }
+
+  // Check if the current time is before 4 PM
+  const currentHour = new Date().getHours();
+  if (currentHour < cutoffHour) {
+    return res.status(403).json({ message: "Logout restricted before 4 PM." });
+  }
 
   // Find the user
   const user = await User.findById(userId);
@@ -176,6 +211,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 
 
+
 const getTeamList = asyncHandler(async (req, res) => {
   const { search } = req.query;
   let query = {};
@@ -191,7 +227,7 @@ const getTeamList = asyncHandler(async (req, res) => {
     query = { ...query, ...searchQuery };
   }
 
-  const users = await User.find(query).select("name title email isActive");
+  const users = await User.find(query).select("name title email department gender isActive");
 
   res.status(201).json(users);
 });
