@@ -34,58 +34,58 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
 
     console.log("Activity Logs:", user.activityLogs); // Log all activity logs
 
+    // Helper function to convert a date to CAT
+    const toCAT = (date) => {
+      const offset = 2 * 60 * 60 * 1000; // CAT is UTC+2
+      return new Date(date.getTime() + offset).toISOString().split("T")[1].slice(0, 8); // Get time in CAT, formatted as HH:MM:SS
+    };
+
     // Iterate through the activity logs to calculate hours and attendance
     user.activityLogs.forEach(log => {
       const loginTime = new Date(log.loginTime);
       let logoutTime = log.logoutTime ? new Date(log.logoutTime) : null;
-    
+
       // Check if the log falls within the evaluation period
       if (loginTime >= startDate && loginTime <= endDate) {
-        // Adjust login time if it falls before 8 AM
         const adjustedLoginTime = new Date(loginTime);
         let adjustedLogoutTime = logoutTime ? new Date(logoutTime) : null;
-    
-        // if (loginTime.getHours() < startHour) {
-        //   adjustedLoginTime.setHours(startHour, 0, 0); // Set to 8 AM if before
-        // }
-    
+
         // If no logout time is available, set logout time as "still logged in"
         if (!logoutTime) {
           adjustedLogoutTime = "still logged in";
         } else if (logoutTime.getHours() > endHour) {
           adjustedLogoutTime.setHours(endHour, 0, 0); // Set to 4 PM as default logout time
         }
-    
+
         // Calculate hours worked if there's a valid logout time
         if (adjustedLogoutTime !== "still logged in" && adjustedLogoutTime > adjustedLoginTime) {
           const hoursWorked = (adjustedLogoutTime - adjustedLoginTime) / (1000 * 60 * 60); // Convert ms to hours
           totalHoursWorked += hoursWorked;
-    
+
           // Mark the day as present
           const workDay = adjustedLoginTime.toDateString();
           workDays[workDay] = (workDays[workDay] || 0) + hoursWorked;
         }
-    
+
         // Check for duplicates in actualDaysPresent
         const workDay = adjustedLoginTime.toDateString();
         const existingEntry = actualDaysPresent.find(entry => entry.date === workDay);
         if (!existingEntry) {
-          // Convert adjusted login and logout times to UTC strings
-          const adjustedLoginTimeUTC = adjustedLoginTime.toISOString().split("T")[1]; // Get only time in UTC
-          const adjustedLogoutTimeUTC = adjustedLogoutTime === "still logged in"
+          // Convert adjusted login and logout times to CAT strings
+          const adjustedLoginTimeCAT = toCAT(adjustedLoginTime); // Get login time in CAT
+          const adjustedLogoutTimeCAT = adjustedLogoutTime === "still logged in"
             ? "still logged in"
-            : adjustedLogoutTime.toISOString().split("T")[1];
-    
-          // Store the actual day present with UTC login and logout times
+            : toCAT(adjustedLogoutTime); // Get logout time in CAT or "still logged in"
+
+          // Store the actual day present with CAT login and logout times
           actualDaysPresent.push({
             date: workDay,
-            loginTime: adjustedLoginTimeUTC, // UTC formatted login time
-            logoutTime: adjustedLogoutTimeUTC // UTC formatted logout time or "still logged in"
+            loginTime: adjustedLoginTimeCAT, // CAT formatted login time
+            logoutTime: adjustedLogoutTimeCAT // CAT formatted logout time or "still logged in"
           });
         }
       }
     });
-    
 
     console.log("Work Days (with hours worked):", workDays); // Log days with hours worked
 
@@ -109,7 +109,7 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
     const performanceRating = {
       hoursWorked: totalHoursWorked,
       daysPresent: daysPresent,
-      actualDaysPresent: actualDaysPresent, // Now includes login and logout times
+      actualDaysPresent: actualDaysPresent, // Now includes login and logout times in CAT
       daysAbsent: absentDays.length,
       absentDays: absentDays, // List of absent days
     };
