@@ -58,12 +58,12 @@ const loginUser = asyncHandler(async (req, res) => {
   const distance = haversineDistance(centerLatitude, centerLongitude, latitude, longitude);
 
   // Check if the distance is within the allowed radius
-  if (distance > radiusInMeters) {
-    return res.status(403).json({
-      status: false,
-      message: "Login restricted to specific locations only.",
-    });
-  }
+  // if (distance > radiusInMeters) {
+  //   return res.status(403).json({
+  //     status: false,
+  //     message: "Login restricted to specific locations only.",
+  //   });
+  // }
 
   // Step 3: Continue with login if location is permitted
   const user = await User.findOne({ email });
