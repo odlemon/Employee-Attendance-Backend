@@ -45,9 +45,9 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
         const adjustedLoginTime = new Date(loginTime);
         let adjustedLogoutTime = logoutTime ? new Date(logoutTime) : null;
     
-        if (loginTime.getHours() < startHour) {
-          adjustedLoginTime.setHours(startHour, 0, 0); // Set to 8 AM if before
-        }
+        // if (loginTime.getHours() < startHour) {
+        //   adjustedLoginTime.setHours(startHour, 0, 0); // Set to 8 AM if before
+        // }
     
         // If no logout time is available, set logout time as "still logged in"
         if (!logoutTime) {
