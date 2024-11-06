@@ -38,42 +38,48 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
     user.activityLogs.forEach(log => {
       const loginTime = new Date(log.loginTime);
       let logoutTime = log.logoutTime ? new Date(log.logoutTime) : null;
-
+    
       // Check if the log falls within the evaluation period
       if (loginTime >= startDate && loginTime <= endDate) {
-        // Adjust login and logout times if they fall outside the allowed range (8 AM - 4 PM)
+        // Adjust login time if it falls before 8 AM
         const adjustedLoginTime = new Date(loginTime);
-        const adjustedLogoutTime = logoutTime ? new Date(logoutTime) : null;
-
+        let adjustedLogoutTime = logoutTime ? new Date(logoutTime) : null;
+    
         if (loginTime.getHours() < startHour) {
           adjustedLoginTime.setHours(startHour, 0, 0); // Set to 8 AM if before
         }
-        if (logoutTime && logoutTime.getHours() > endHour) {
-          adjustedLogoutTime.setHours(endHour, 0, 0); // Set to 4 PM if after
+    
+        // If no logout time is available, set logout time as "still logged in"
+        if (!logoutTime) {
+          adjustedLogoutTime = "still logged in";
+        } else if (logoutTime.getHours() > endHour) {
+          adjustedLogoutTime.setHours(endHour, 0, 0); // Set to 4 PM as default logout time
         }
-
-        // Calculate hours worked within the restricted time period (8 AM to 4 PM)
-        if (adjustedLogoutTime && adjustedLogoutTime > adjustedLoginTime) {
+    
+        // Calculate hours worked if there's a valid logout time
+        if (adjustedLogoutTime !== "still logged in" && adjustedLogoutTime > adjustedLoginTime) {
           const hoursWorked = (adjustedLogoutTime - adjustedLoginTime) / (1000 * 60 * 60); // Convert ms to hours
           totalHoursWorked += hoursWorked;
-
+    
           // Mark the day as present
           const workDay = adjustedLoginTime.toDateString();
           workDays[workDay] = (workDays[workDay] || 0) + hoursWorked;
-
-          // Check for duplicates in actualDaysPresent
-          const existingEntry = actualDaysPresent.find(entry => entry.date === workDay);
-          if (!existingEntry) {
-            // Store the actual day present with login and logout times
-            actualDaysPresent.push({
-              date: workDay,
-              loginTime: adjustedLoginTime.toLocaleTimeString(), // Format login time
-              logoutTime: adjustedLogoutTime ? adjustedLogoutTime.toLocaleTimeString() : null // Format logout time
-            });
-          }
+        }
+    
+        // Check for duplicates in actualDaysPresent
+        const workDay = adjustedLoginTime.toDateString();
+        const existingEntry = actualDaysPresent.find(entry => entry.date === workDay);
+        if (!existingEntry) {
+          // Store the actual day present with login and logout times
+          actualDaysPresent.push({
+            date: workDay,
+            loginTime: adjustedLoginTime.toLocaleTimeString(), // Format login time
+            logoutTime: adjustedLogoutTime === "still logged in" ? "still logged in" : adjustedLogoutTime.toLocaleTimeString() // Set "still logged in" or format logout time
+          });
         }
       }
     });
+    
 
     console.log("Work Days (with hours worked):", workDays); // Log days with hours worked
 
