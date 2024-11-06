@@ -24,7 +24,7 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
     let totalHoursWorked = 0;
     let daysPresent = 0;
     let absentDays = [];
-    const actualDaysPresent = []; // Change to an array to store detailed attendance
+    const actualDaysPresent = []; // Array to store detailed attendance
 
     const workDays = {};
 
@@ -70,11 +70,17 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
         const workDay = adjustedLoginTime.toDateString();
         const existingEntry = actualDaysPresent.find(entry => entry.date === workDay);
         if (!existingEntry) {
-          // Store the actual day present with login and logout times
+          // Convert adjusted login and logout times to UTC strings
+          const adjustedLoginTimeUTC = adjustedLoginTime.toISOString().split("T")[1]; // Get only time in UTC
+          const adjustedLogoutTimeUTC = adjustedLogoutTime === "still logged in"
+            ? "still logged in"
+            : adjustedLogoutTime.toISOString().split("T")[1];
+    
+          // Store the actual day present with UTC login and logout times
           actualDaysPresent.push({
             date: workDay,
-            loginTime: adjustedLoginTime.toLocaleTimeString(), // Format login time
-            logoutTime: adjustedLogoutTime === "still logged in" ? "still logged in" : adjustedLogoutTime.toLocaleTimeString() // Set "still logged in" or format logout time
+            loginTime: adjustedLoginTimeUTC, // UTC formatted login time
+            logoutTime: adjustedLogoutTimeUTC // UTC formatted logout time or "still logged in"
           });
         }
       }
