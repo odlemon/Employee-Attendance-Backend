@@ -21,7 +21,7 @@ const loginUser = asyncHandler(async (req, res) => {
   
   const centerLatitude = -17.8368723; // Center latitude
   const centerLongitude = 31.0139008; // Center longitude
-  const radiusInMeters = 100; // 1 km radius
+  const radiusInMeters = 1000; // 1 km radius
 
   const { latitude, longitude } = location || {};
 
@@ -147,7 +147,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   // Location and time constraints
   const centerLatitude = -17.8368723;
   const centerLongitude = 31.0139008;
-  const radiusInMeters = 100;
+  const radiusInMeters = 1000;
   const cutoffHour = 16; // 4 PM in 24-hour format
 
   // Utility function for Haversine distance calculation
@@ -171,9 +171,9 @@ const logoutUser = asyncHandler(async (req, res) => {
   const distance = haversineDistance(centerLatitude, centerLongitude, latitude, longitude);
 
   // Restrict if user is outside the allowed radius
-  // if (distance > radiusInMeters) {
-  //   return res.status(403).json({ message: "Logout restricted to specific locations only." });
-  // }
+  if (distance > radiusInMeters) {
+    return res.status(403).json({ message: "Logout restricted to specific locations only." });
+  }
 
   // Check if the current time is before 4 PM
   const currentHour = new Date().getHours();
