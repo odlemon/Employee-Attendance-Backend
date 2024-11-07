@@ -23,13 +23,11 @@ const loginUser = asyncHandler(async (req, res) => {
   const centerLongitude = 31.0139008; // Center longitude
   const radiusInMeters = 100; // 1 km radius
 
-  // Destructure latitude and longitude from location
   const { latitude, longitude } = location || {};
 
   // Log the received location
   console.log("Received Location: ", { latitude, longitude });
 
-  // Check if the location is defined
   if (!latitude || !longitude) {
     return res.status(400).json({
       status: false,
@@ -54,18 +52,16 @@ const loginUser = asyncHandler(async (req, res) => {
     return R * c; // Distance in meters
   };
 
-  // Calculate the distance from the center
+
   const distance = haversineDistance(centerLatitude, centerLongitude, latitude, longitude);
 
-  // Check if the distance is within the allowed radius
-  if (distance > radiusInMeters) {
+  // if (distance > radiusInMeters) {
     return res.status(403).json({
       status: false,
       message: "Login restricted to specific locations only.",
     });
   }
 
-  // Step 3: Continue with login if location is permitted
   const user = await User.findOne({ email });
   if (!user) {
     return res.status(401).json({ status: false, message: "Invalid email or password." });
@@ -211,10 +207,11 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 
 
-
 const getTeamList = asyncHandler(async (req, res) => {
   const { search } = req.query;
-  let query = {};
+  let query = {
+    email: { $ne: "admin@belvedere.com" }  // Exclude specific email
+  };
 
   if (search) {
     const searchQuery = {

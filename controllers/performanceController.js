@@ -111,7 +111,7 @@ const evaluatePerformance = asyncHandler(async (req, res) => {
       daysPresent: daysPresent,
       actualDaysPresent: actualDaysPresent, // Now includes login and logout times in CAT
       daysAbsent: absentDays.length,
-      absentDays: absentDays, // List of absent days
+      absentDays: absentDays, 
     };
 
     console.log("Performance Rating:", performanceRating); // Log the final performance rating
