@@ -55,7 +55,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const distance = haversineDistance(centerLatitude, centerLongitude, latitude, longitude);
 
-  // if (distance > radiusInMeters) {
+  if (distance > radiusInMeters) {
     return res.status(403).json({
       status: false,
       message: "Login restricted to specific locations only.",
