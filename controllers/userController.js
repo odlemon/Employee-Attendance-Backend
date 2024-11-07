@@ -171,15 +171,15 @@ const logoutUser = asyncHandler(async (req, res) => {
   const distance = haversineDistance(centerLatitude, centerLongitude, latitude, longitude);
 
   // Restrict if user is outside the allowed radius
-  if (distance > radiusInMeters) {
-    return res.status(403).json({ message: "Logout restricted to specific locations only." });
-  }
+  // if (distance > radiusInMeters) {
+  //   return res.status(403).json({ message: "Logout restricted to specific locations only." });
+  // }
 
   // Check if the current time is before 4 PM
   const currentHour = new Date().getHours();
-  if (currentHour < cutoffHour) {
-    return res.status(403).json({ message: "Logout restricted before 4 PM." });
-  }
+  // if (currentHour < cutoffHour) {
+  //   return res.status(403).json({ message: "Logout restricted before 4 PM." });
+  // }
 
   // Find the user
   const user = await User.findById(userId);
