@@ -177,9 +177,9 @@ const logoutUser = asyncHandler(async (req, res) => {
 
   // Check if the current time is before 4 PM
   const currentHour = new Date().getHours();
-  if (currentHour < cutoffHour) {
-    return res.status(403).json({ message: "Logout restricted before 4 PM." });
-  }
+  // if (currentHour < cutoffHour) {
+  //   return res.status(403).json({ message: "Logout restricted before 4 PM." });
+  // }
 
   // Find the user
   const user = await User.findById(userId);
